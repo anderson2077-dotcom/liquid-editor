@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<!-- saved from url=(0050)file:///C:/Users/wesle/Downloads/index%20(12).html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liquid Code: Community Edition</title>
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+            --accent-color: #0A84FF;
+            --success-color: #30D158;
+            --admin-color: #FF3B30;
+            --text-color: #ffffff;
+            --terminal-bg: #1e1e1e;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            height: 100vh;
+            background: #000 url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-color);
+            overflow: hidden;
+        }
+
+        .app-container {
+            width: 95%;
+            height: 92%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: var(--glass-shadow);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        header {
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--glass-border);
+            background: rgba(0,0,0,0.2);
+        }
+
+        .brand-area { display: flex; align-items: center; gap: 15px; }
+        
+        select {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 8px;
+            border-radius: 8px;
+            outline: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        select option { background: #333; }
+
+        .controls { display: flex; align-items: center; gap: 10px; }
+
+        button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 8px 16px;
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(5px);
+            font-weight: 500;
+        }
+        button:hover { background: rgba(255, 255, 255, 0.25); transform: translateY(-1px); }
+        button.primary { background: var(--accent-color); border:none; }
+        button.publish { background: var(--success-color); border:none; color: #000; font-weight:bold;}
+        
+        /* ADMIN BUTTON STYLE */
+        #admin-source-btn {
+            display: none;
+            background: rgba(255, 59, 48, 0.2);
+            border: 1px solid var(--admin-color);
+            color: var(--admin-color);
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(255, 59, 48, 0.3);
+            animation: pulse 2s infinite;
+        }
+        #admin-source-btn.active-source-mode {
+            background: #fff;
+            color: #000;
+            border-color: #fff;
+            animation: none;
+            box-shadow: 0 0 15px rgba(255,255,255,0.5);
+        }
+
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 59, 48, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); } }
+
+        .workspace { display: flex; flex: 1; overflow: hidden; position: relative; }
+        .pane { flex: 1; display: flex; flex-direction: column; padding: 10px; min-width: 0; }
+        
+        .editor-wrapper { flex: 1; display: flex; flex-direction: column; position: relative; }
+        
+        textarea {
+            flex: 1; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--glass-border);
+            border-radius: 16px; color: #eee; padding: 20px;
+            font-family: 'Menlo', 'Monaco', monospace; 
+            font-size: 14px; resize: none; outline: none;
+            white-space: pre; overflow-wrap: normal; overflow-x: auto;
+        }
+        
+        textarea.locked {
+            background: rgba(0, 0, 0, 0.6); color: #888;
+            cursor: not-allowed; border: 1px dashed #555;
+        }
+
+        .lock-badge {
+            position: absolute; top: 10px; right: 25px;
+            background: #FF3B30; color: white;
+            font-size: 10px; padding: 4px 8px; border-radius: 4px;
+            pointer-events: none; opacity: 0; transition: opacity 0.3s;
+            font-weight: bold; text-transform: uppercase;
+        }
+        .lock-badge.visible { opacity: 1; }
+
+        .output-container {
+            flex: 1; border-radius: 16px; overflow: hidden; position: relative;
+            background: white; display: flex; flex-direction: column;
+        }
+
+        iframe { width: 100%; height: 100%; border: none; display: block; }
+        
+        .terminal {
+            width: 100%; height: 100%; background: var(--terminal-bg); 
+            color: #00ff00; font-family: 'Courier New', monospace; 
+            padding: 15px; box-sizing: border-box; overflow-y: auto;
+            display: none; font-size: 13px; border-top: 1px solid #333;
+        }
+        .log-line { margin-bottom: 5px; border-bottom: 1px solid #333; padding-bottom: 2px; }
+        .error-line { color: #FF453A; font-weight: bold; background: rgba(255, 69, 58, 0.1); padding: 5px; border-radius: 4px;}
+
+        /* GALLERY */
+        .gallery-view {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #1c1c1e; z-index: 50; display: none;
+            flex-direction: column; padding: 30px; box-sizing: border-box;
+            overflow-y: auto;
+        }
+        .gallery-view.active { display: flex; }
+        .gallery-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;}
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+        
+        .gallery-card {
+            background: rgba(255,255,255,0.08); border-radius: 12px; padding: 15px;
+            cursor: pointer; transition: transform 0.2s; border: 1px solid transparent;
+            position: relative;
+        }
+        .gallery-card:hover { transform: translateY(-5px); border-color: var(--accent-color); }
+        .gallery-card .delete-btn {
+            position: absolute; top: 10px; right: 10px;
+            background: #FF3B30; width: 20px; height: 20px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; color: white; display: none;
+        }
+        .gallery-card:hover .delete-btn { display: flex; }
+
+        /* MODAL */
+        .modal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(15px);
+            z-index: 100; display: none; justify-content: center; align-items: center;
+        }
+        .modal.active { display: flex; }
+        .modal-box {
+            background: #1c1c1e; padding: 30px; border-radius: 20px;
+            border: 1px solid var(--glass-border); text-align: center; width: 340px;
+        }
+        input {
+            width: 100%; padding: 12px; margin-bottom: 12px;
+            background: rgba(255,255,255,0.08); border: 1px solid #444;
+            color: white; border-radius: 8px; box-sizing: border-box; outline:none;
+        }
+        
+        .user-profile {
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(0,0,0,0.3); padding: 5px 15px 5px 5px;
+            border-radius: 50px; border: 1px solid var(--glass-border); cursor: pointer;
+        }
+        .avatar { width: 30px; height: 30px; background: #ccc; border-radius: 50%; }
+        
+        #toast {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: white; padding: 10px 20px;
+            border-radius: 50px; opacity: 0; transition: opacity 0.5s; z-index: 200;
+        }
+        #toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <div class="brand-area">
+            <h3>Liquid Code</h3>
+            <select id="lang-select" onchange="changeLanguage()">
+                <option value="html">HTML / Web</option>
+                <option value="js">JavaScript (Console)</option>
+            </select>
+        </div>
+        <div class="controls">
+            <button id="admin-source-btn" onclick="toggleSourceCode()" style="display: block;" class="">⚡ GET CODE</button>
+            
+            <button onclick="newProject()">📄 New</button>
+            <button class="publish" onclick="publishProject()">☁️ Publish</button>
+            <button id="gallery-toggle-btn" onclick="toggleGalleryView()" class="">📂 Gallery</button>
+            <button class="primary" onclick="runCode()">▶ Run</button>
+            
+            <div class="user-profile" onclick="openLogin()">
+                <div class="avatar" id="avatar-img" style="background: rgb(255, 59, 48);"></div>
+                <span id="username-display">Admin Anderson</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="workspace">
+        <div class="pane">
+            <div class="editor-wrapper">
+                <span id="lock-label" class="lock-badge">🔒 READ ONLY</span>
+                <textarea id="editor" spellcheck="false" placeholder="// Write code here..." class=""></textarea>
+            </div>
+        </div>
+        <div class="pane">
+            <div id="output-wrapper" class="output-container">
+                
+                <iframe id="web-frame" style="width: 100%; height: 100%; border: none; display: block;" src="./Liquid Code_ Community Edition_files/saved_resource.html"></iframe><div id="terminal" class="terminal" style="display: none;"></div>
+            </div>
+        </div>
+
+        <div id="gallery-view" class="gallery-view">
+            <div class="gallery-header">
+                <h2>Community Gallery</h2>
+                <button onclick="clearStorage()" style="font-size:12px; background: #333;">🗑️ Clear My Data</button>
+            </div>
+            <div class="gallery-grid" id="gallery-grid"><div class="gallery-card">
+                <div class="delete-btn" onclick="deleteProject(event, 1770675972154)">✕</div>
+                <div style="font-weight:bold; font-size:16px;">Ultimate Subnautica Below Zero Quiz</div>
+                <div style="font-size:12px;color:#aaa; margin-top:5px;">
+                    HTML • Admin Anderson
+                </div>
+            </div><div class="gallery-card">
+                <div class="delete-btn" onclick="deleteProject(event, 1770675771956)">✕</div>
+                <div style="font-weight:bold; font-size:16px;">Ultimate Subnautica Quiz</div>
+                <div style="font-size:12px;color:#aaa; margin-top:5px;">
+                    HTML • Admin Anderson
+                </div>
+            </div><div class="gallery-card">
+                <div class="delete-btn" onclick="deleteProject(event, 1770434035746)">✕</div>
+                <div style="font-weight:bold; font-size:16px;">Whack A Mole</div>
+                <div style="font-size:12px;color:#aaa; margin-top:5px;">
+                    HTML • Admin Anderson
+                </div>
+            </div><div class="gallery-card">
+                <div class="delete-btn" onclick="deleteProject(event, 1770426625921)">✕</div>
+                <div style="font-weight:bold; font-size:16px;">Tetris</div>
+                <div style="font-size:12px;color:#aaa; margin-top:5px;">
+                    HTML • Admin Anderson
+                </div>
+            </div><div class="gallery-card">
+                <div class="delete-btn" onclick="deleteProject(event, 1770423719844)">✕</div>
+                <div style="font-weight:bold; font-size:16px;">Neon Pulse</div>
+                <div style="font-size:12px;color:#aaa; margin-top:5px;">
+                    HTML • Admin Anderson
+                </div>
+            </div><div class="gallery-card">
+                <div class="delete-btn" onclick="deleteProject(event, 1770423542664)">✕</div>
+                <div style="font-weight:bold; font-size:16px;">Neon Jab Sim</div>
+                <div style="font-size:12px;color:#aaa; margin-top:5px;">
+                    HTML • Admin Anderson
+                </div>
+            </div><div class="gallery-card">
+                <div class="delete-btn" onclick="deleteProject(event, 1770422802166)">✕</div>
+                <div style="font-weight:bold; font-size:16px;">Neon Nightmare</div>
+                <div style="font-size:12px;color:#aaa; margin-top:5px;">
+                    HTML • Admin Anderson
+                </div>
+            </div><div class="gallery-card">
+                <div class="delete-btn" onclick="deleteProject(event, 1770422226954)">✕</div>
+                <div style="font-weight:bold; font-size:16px;">Neon Racer</div>
+                <div style="font-size:12px;color:#aaa; margin-top:5px;">
+                    HTML • Admin Anderson
+                </div>
+            </div><div class="gallery-card">
+                <div class="delete-btn" onclick="deleteProject(event, 1770418025752)">✕</div>
+                <div style="font-weight:bold; font-size:16px;">Neon Sniper</div>
+                <div style="font-size:12px;color:#aaa; margin-top:5px;">
+                    HTML • Admin Anderson
+                </div>
+            </div><div class="gallery-card">
+                <div class="delete-btn" onclick="deleteProject(event, 1770417072587)">✕</div>
+                <div style="font-weight:bold; font-size:16px;">Neon Flight</div>
+                <div style="font-size:12px;color:#aaa; margin-top:5px;">
+                    HTML • Admin Anderson
+                </div>
+            </div><div class="gallery-card">
+                <div class="delete-btn" onclick="deleteProject(event, 2)">✕</div>
+                <div style="font-weight:bold; font-size:16px;">Calculus Loop</div>
+                <div style="font-size:12px;color:#aaa; margin-top:5px;">
+                    JS • Guest
+                </div>
+            </div><div class="gallery-card">
+                <div class="delete-btn" onclick="deleteProject(event, 1)">✕</div>
+                <div style="font-weight:bold; font-size:16px;">Hacker Rain</div>
+                <div style="font-size:12px;color:#aaa; margin-top:5px;">
+                    HTML • Guest
+                </div>
+            </div></div>
+        </div>
+    </div>
+
+    <div class="modal" id="login-modal">
+        <div class="modal-box">
+            <h2>Sign In</h2>
+            <input type="text" id="email-input" placeholder="Email">
+            <input type="password" id="pass-input" placeholder="Password">
+            <button class="primary" style="width:100%" onclick="login()">Sign In</button>
+            <button style="width:100%; background:transparent; border:none; margin-top:10px; color:#aaa;" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+
+    <div id="toast" class="">Returned to Normal Editor</div>
+</div>
+
+<script>
+    // ====================================================
+    // CONFIG
+    // ====================================================
+    const ADMIN_EMAIL = "Anderson.2077@student.acboe.net"; 
+    const ADMIN_PASS  = "6/3/2013";
+    const STORAGE_KEY = "liquid_code_gallery";
+    // ====================================================
+
+    // State
+    let isSourceViewActive = false;
+    let isGalleryOpen = false;
+
+    // Default Data
+    const defaultData = [
+        { 
+            id: 1,
+            title: "Hacker Rain", 
+            lang: "html",
+            code: "<canvas id='c'></canvas><style>body{margin:0;overflow:hidden;background:black;}</style><script>var c=document.getElementById('c'),ctx=c.getContext('2d');c.width=window.innerWidth;c.height=window.innerHeight;var chars='01';chars=chars.split('');var font_size=10;var columns=c.width/font_size;var drops=[];for(var x=0;x<columns;x++)drops[x]=1;function draw(){ctx.fillStyle='rgba(0, 0, 0, 0.05)';ctx.fillRect(0, 0, c.width, c.height);ctx.fillStyle='#0F0';ctx.font=font_size+'px arial';for(var i=0;i<drops.length;i++){var text=chars[Math.floor(Math.random()*chars.length)];ctx.fillText(text,i*font_size,drops[i]*font_size);if(drops[i]*font_size>c.height&&Math.random()>0.975)drops[i]=0;drops[i]++;}}setInterval(draw,33);<\/script>" 
+        },
+        { 
+            id: 2,
+            title: "Calculus Loop", 
+            lang: "js",
+            code: "// This calculates squares\nconsole.log('Starting Calculation...');\nfor(let i=0; i<5; i++) {\n  console.log('Number: ' + i + ' squared is ' + (i*i));\n}\nconsole.log('Done!');" 
+        }
+    ];
+
+    // Load Data
+    let galleryData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultData;
+
+    const editor = document.getElementById('editor');
+    let iframe = document.getElementById('web-frame');
+    const terminal = document.getElementById('terminal');
+    const langSelect = document.getElementById('lang-select');
+    const adminBtn = document.getElementById('admin-source-btn');
+    const modal = document.getElementById('login-modal');
+    const galleryView = document.getElementById('gallery-view');
+    const toggleBtn = document.getElementById('gallery-toggle-btn');
+    const lockLabel = document.getElementById('lock-label');
+    const outputWrapper = document.getElementById('output-wrapper');
+
+    window.onload = function() {
+        newProject(); 
+        renderGallery();
+    };
+
+    function changeLanguage() {
+        const lang = langSelect.value;
+        iframe = document.getElementById('web-frame'); // Refresh ref
+        
+        if (lang === 'html') {
+            iframe.style.display = 'block';
+            terminal.style.display = 'none';
+        } else {
+            iframe.style.display = 'none';
+            terminal.style.display = 'block';
+        }
+        runCode();
+    }
+
+    // --- EXECUTION ENGINE ---
+    function runCode() {
+        const lang = langSelect.value;
+        const code = editor.value;
+        terminal.innerHTML = '';
+        
+        if (lang === 'html') {
+            // Rebuild Iframe
+            const oldIframe = document.getElementById('web-frame');
+            if(oldIframe) oldIframe.remove();
+
+            const newIframe = document.createElement('iframe');
+            newIframe.id = 'web-frame';
+            newIframe.style.width = '100%';
+            newIframe.style.height = '100%';
+            newIframe.style.border = 'none';
+            newIframe.style.display = 'block';
+
+            outputWrapper.insertBefore(newIframe, terminal);
+            iframe = newIframe;
+
+            const doc = newIframe.contentDocument || newIframe.contentWindow.document;
+            doc.open();
+            // Error handling script
+            const script = `<script>window.onerror=function(m,u,l){document.body.innerHTML+="<div style='color:red;background:#ffebeb;padding:10px;border:1px solid red;margin:10px;font-family:monospace;'>❌ Error on Line "+l+": "+m+"</div>";return true;}<\/script>`;
+            doc.write(script + code);
+            doc.close();
+
+        } else {
+            // JS Engine
+            terminal.style.display = 'block';
+            if(iframe) iframe.style.display = 'none';
+            
+            const log = (msg) => {
+                const line = document.createElement('div');
+                line.className = 'log-line';
+                line.textContent = "> " + msg;
+                terminal.appendChild(line);
+            };
+            const err = (msg) => {
+                const line = document.createElement('div');
+                line.className = 'error-line';
+                line.textContent = "❌ " + msg;
+                terminal.appendChild(line);
+            };
+            try {
+                const runUserCode = new Function('console', code);
+                const customConsole = { log: log, error: err, warn: log };
+                runUserCode(customConsole);
+            } catch (e) {
+                err(`Runtime Error: ${e.message}`);
+            }
+        }
+    }
+
+    // --- PUBLISHING SYSTEM ---
+    function publishProject() {
+        // Prevent publishing empty code
+        if(editor.value.length < 10) {
+            showToast("❌ Code is too short to publish");
+            return;
+        }
+
+        const title = prompt("Name your project:");
+        if(!title) return;
+
+        const newProject = {
+            id: Date.now(),
+            title: title,
+            lang: langSelect.value,
+            code: editor.value,
+            author: document.getElementById('username-display').innerText
+        };
+
+        galleryData.push(newProject);
+        saveGallery();
+        renderGallery();
+        
+        // Auto open gallery to show it worked
+        openGallery();
+        showToast("✅ Project Published!");
+    }
+
+    function deleteProject(e, id) {
+        e.stopPropagation(); // Stop clicking the card
+        if(confirm("Delete this project?")) {
+            galleryData = galleryData.filter(item => item.id !== id);
+            saveGallery();
+            renderGallery();
+            showToast("Project Deleted");
+        }
+    }
+
+    function saveGallery() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(galleryData));
+    }
+    
+    function clearStorage() {
+        if(confirm("Delete all your saved projects?")) {
+            localStorage.removeItem(STORAGE_KEY);
+            galleryData = defaultData;
+            renderGallery();
+            showToast("Storage Cleared");
+        }
+    }
+
+    // --- GALLERY UI ---
+    function toggleGalleryView() {
+        if (galleryView.classList.contains('active')) {
+            closeGallery();
+        } else {
+            openGallery();
+        }
+    }
+
+    function openGallery() {
+        galleryView.classList.add('active');
+        toggleBtn.innerText = "✏️ Back to Editor";
+        toggleBtn.classList.add('primary');
+        isGalleryOpen = true;
+    }
+
+    function closeGallery() {
+        galleryView.classList.remove('active');
+        toggleBtn.innerText = "📂 Gallery";
+        toggleBtn.classList.remove('primary');
+        isGalleryOpen = false;
+    }
+
+    function renderGallery() {
+        const grid = document.getElementById('gallery-grid');
+        grid.innerHTML = '';
+        
+        // Reverse so newest is first
+        const sortedData = [...galleryData].reverse();
+
+        sortedData.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'gallery-card';
+            card.innerHTML = `
+                <div class="delete-btn" onclick="deleteProject(event, ${item.id})">✕</div>
+                <div style="font-weight:bold; font-size:16px;">${item.title}</div>
+                <div style="font-size:12px;color:#aaa; margin-top:5px;">
+                    ${item.lang.toUpperCase()} • ${item.author || 'Guest'}
+                </div>
+            `;
+            card.onclick = () => loadLockedProject(item);
+            grid.appendChild(card);
+        });
+    }
+
+    function loadLockedProject(item) {
+        closeGallery();
+        langSelect.value = item.lang;
+        changeLanguage();
+        editor.value = item.code;
+        
+        editor.readOnly = true;
+        editor.classList.add('locked');
+        lockLabel.classList.add('visible');
+        
+        runCode();
+        showToast(`Loaded ${item.title}`);
+        resetAdminButtonState();
+    }
+
+    function newProject() {
+        closeGallery();
+        editor.value = "<h1>New Project</h1>\n";
+        langSelect.value = 'html';
+        changeLanguage();
+        unlockEditor();
+        resetAdminButtonState();
+        showToast("New Project Created");
+    }
+
+    function unlockEditor() {
+        editor.readOnly = false;
+        editor.classList.remove('locked');
+        lockLabel.classList.remove('visible');
+    }
+
+    // --- LOGIN ---
+    function openLogin() { modal.classList.add('active'); }
+    function closeModal() { modal.classList.remove('active'); }
+
+    function login() {
+        const email = document.getElementById('email-input').value.trim();
+        const pass = document.getElementById('pass-input').value.trim();
+
+        if (email === ADMIN_EMAIL && pass === ADMIN_PASS) {
+            adminBtn.style.display = 'block';
+            document.getElementById('username-display').innerText = "Admin Anderson";
+            document.getElementById('avatar-img').style.background = '#FF3B30';
+            showToast("✅ ADMIN ACCESS GRANTED");
+        } else {
+            adminBtn.style.display = 'none';
+            document.getElementById('username-display').innerText = "Guest";
+            document.getElementById('avatar-img').style.background = '#30D158';
+            showToast("Signed in as Guest");
+        }
+        closeModal();
+    }
+
+    // --- SOURCE EXTRACTION ---
+    function toggleSourceCode() {
+        closeGallery();
+
+        if (!isSourceViewActive) {
+            if(confirm("⚠ ADMIN OVERRIDE ⚡\n\nExtract complete system source code?")) {
+                unlockEditor();
+                langSelect.value = 'html';
+                changeLanguage();
+
+                const sourceCode = document.documentElement.outerHTML;
+                editor.value = sourceCode;
+                runCode();
+
+                isSourceViewActive = true;
+                adminBtn.innerText = "↩ BACK TO EDITOR";
+                adminBtn.classList.add('active-source-mode');
+                showToast("System Source Code Extracted!");
+            }
+        } else {
+            newProject();
+            showToast("Returned to Normal Editor");
+        }
+    }
+
+    function resetAdminButtonState() {
+        isSourceViewActive = false;
+        adminBtn.innerText = "⚡ GET CODE";
+        adminBtn.classList.remove('active-source-mode');
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3000);
+    }
+</script>
+
+</body></html>
